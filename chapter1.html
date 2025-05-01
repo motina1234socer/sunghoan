@@ -1,0 +1,75 @@
+<!DOCTYPE HTML>
+<head>
+    <title>웹사이트</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<style>
+    @font-face {
+        font-family: 'DungGeunMo';
+        src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/DungGeunMo.woff') format('woff');
+        font-weight: normal;
+        font-style: normal;
+    }
+    body {
+        font-family: "DungGeunMo", sans-serif;
+        font-weight: 700;
+        font-style: normal;
+    }
+    body {
+      margin: 0 auto;
+      width: 100vw;
+      height: 100vh;
+      background: url('map1.png') center/cover no-repeat;
+      overflow: hidden;
+    }
+    .overlay {
+        position: absolute;
+
+        top: 0; left: 0;
+        pointer-events: none;
+        transform: translate(-50%, -50%);
+        mix-blend-mode: luminosity;
+    }
+    .ui {
+        top: 80%;
+        position: relative;
+        margin-top: 0%;
+        margin-left:0%;
+        margin-right: 0%;
+        margin-bottom: 60%;
+        border: black solid 4px;
+        background: white;
+    }
+</style>
+
+<body>
+    <div id="items">
+        <image src="key.png" style="position: absolute; left: 35%; top: 70%;" onclick="getKey(event)"></image>
+    </div>
+    <img src="flash.png" class="overlay" id="overlay">
+    <div class="ui">
+        <p id="key" style="font-size:24pt;">key</p>
+    </div>
+    <script>
+        const overlay = document.getElementById('overlay');
+        const key = document.getElementById('key');
+        var gotten_key = 0;
+        
+        key.innerText = `key: ${gotten_key}`;
+
+        function getKey(event) {
+            event.target.style.display = 'none';
+            gotten_key = gotten_key + 1;
+            key.innerText = `key: ${gotten_key}`;
+        }
+
+        document.addEventListener('mousemove', (e) => {
+            const x = e.clientX;
+            const y = e.clientY;
+            overlay.style.left = `${x}px`;
+            overlay.style.top = `${y}px`;
+        });
+    </script>
+</body>
