@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>삼국지 땅따먹기 - 전략 시뮬레이션</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', Arial, sans-serif;
+            background: linear-gradient(135deg, #2c1810 0%, #8b4513 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+
+        .game-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr 300px;
+            gap: 20px;
+            align-items: start;
+        }
+
+        .left-panel, .right-panel {
+            background: rgba(0,0,0,0.4);
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid #8b4513;
+        }
+
+        .center-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .faction-selector {
+            padding: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 15px;
+            border: 2px solid #8b4513;
+        }
+
+        .faction-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .faction-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .faction-btn.wei {
+            background: linear-gradient(45deg, #4169e1, #6495ed);
+            color: white;
+        }
+
+        .faction-btn.shu {
+            background: linear-gradient(45deg, #dc143c, #ff6b6b);
+            color: white;
+        }
+
+        .faction-btn.wu {
+            background: linear-gradient(45deg, #228b22, #90ee90);
+            color: white;
+        }
+
+        .faction-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .faction-btn.selected {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255,215,0,0.5);
+        }
+
+        .stats-panel {
+            margin-bottom: 20px;
+        }
+
+        .stats-panel h3 {
+            margin-bottom: 15px;
+            color: #ffd700;
+            text-align: center;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+        }
+
+        .stat-name {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .stat-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+            margin-top: 5px;
+            overflow: hidden;
+		}
+		
+		.play-bangbeob {
+			display: flex;
+			width: 100%;
+			top: 10px;
+			padding: 5px;
+			background: rgba(255,255,255,0.1);
+			border-radius: 5px;
+		}
+		
+		
+        .stat-fill {
+            height: 100%;
+            transition: width 0.5s ease;
+            border-radius: 4px;
+        }
+		
+		
+
+        .military { background: linear-gradient(90deg, #dc143c, #ff6b6b); }
+        .economy { background: linear-gradient(90deg, #ffd700, #ffed4e); }
+        .culture { background: linear-gradient(90deg, #9370db, #dda0dd); }
+
+        .events-panel h3 {
+            margin-bottom: 15px;
+            color: #ffd700;
+            text-align: center;
+        }
+
+        .event-item {
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-left: 4px solid #ffd700;
+        }
+
+        .event-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #ffd700;
+        }
+
+        .event-description {
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .event-effects {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .effect {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .effect.positive { background: rgba(34, 197, 94, 0.3); color: #22c55e; }
+        .effect.negative { background: rgba(239, 68, 68, 0.3); color: #ef4444; }
+
+        .map-container {
+            background: rgba(0,0,0,0.4);
+            padding: 20px;
+            border-radius: 15px;
+            border: 3px solid #8b4513;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .game-map {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 2px;
+            background: #2c1810;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .territory {
+            width: 45px;
+            height: 45px;
+            border: 1px solid #8b4513;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+        }
+
+        .territory:hover {
+            transform: scale(1.1);
+            z-index: 10;
+            box-shadow: 0 0 15px rgba(255,215,0,0.8);
+        }
+
+        .territory.wei {
+            background: linear-gradient(135deg, #4169e1, #1e3a8a);
+            color: white;
+        }
+
+        .territory.shu {
+            background: linear-gradient(135deg, #dc143c, #991b1b);
+            color: white;
+        }
+
+        .territory.wu {
+            background: linear-gradient(135deg, #228b22, #166534);
+            color: white;
+        }
+
+        .territory.neutral {
+            background: linear-gradient(135deg, #6b7280, #374151);
+            color: #d1d5db;
+        }
+
+        .territory.capturable {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 5px rgba(255,215,0,0.5); }
+            50% { box-shadow: 0 0 20px rgba(255,215,0,1); }
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .control-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(45deg, #8b4513, #a0522d);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            background: linear-gradient(45deg, #a0522d, #cd853f);
+            transform: translateY(-2px);
+        }
+
+        .status-message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: bold;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.3);
+        }
+
+        .territory-info h3 {
+            margin-bottom: 15px;
+            color: #ffd700;
+            text-align: center;
+        }
+
+        .territory-count {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+        }
+
+        .faction-color {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            border: 1px solid #fff;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .territory {
+                width: 35px;
+                height: 35px;
+                font-size: 0.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🏛️ 삼국지 전략 시뮬레이션 🏛️</h1>
+        
+        <div class="faction-selector">
+            <h3 style="margin-bottom: 15px;">진영을 선택하세요</h3>
+            <div class="faction-buttons">
+                <button class="faction-btn wei" onclick="selectFaction('wei')">위(魏) 조조</button>
+                <button class="faction-btn shu" onclick="selectFaction('shu')">촉(蜀) 유비</button>
+                <button class="faction-btn wu" onclick="selectFaction('wu')">오(吳) 손권</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="left-panel">
+                <div class="stats-panel">
+                    <h3>📊 진영별 능력치</h3>
+                    <div id="factionStats"></div>
+                </div>
+                
+                <div class="territory-info">
+                    <h3>🗺️ 영토 현황</h3>
+                    <div class="territory-count">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div class="faction-color" style="background: linear-gradient(45deg, #4169e1, #1e3a8a);"></div>
+                            <span>위</span>
+                        </div>
+                        <span id="wei-count">48</span>
+                    </div>
+                    <div class="territory-count">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div class="faction-color" style="background: linear-gradient(45deg, #dc143c, #991b1b);"></div>
+                            <span>촉</span>
+                        </div>
+                        <span id="shu-count">48</span>
+                    </div>
+                    <div class="territory-count">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div class="faction-color" style="background: linear-gradient(45deg, #228b22, #166534);"></div>
+                            <span>오</span>
+                        </div>
+                        <span id="wu-count">48</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="center-panel">
+				<div class="status-message" id="statusMessage">
+                    진영을 선택하고 전략을 세워보세요!
+                </div>
+				
+                <div class="map-container">
+                    <div class="game-map" id="gameMap"></div>
+                </div>
+                
+                <div class="controls">
+                    <button class="control-btn" onclick="resetGame()">게임 초기화</button>
+                    <button class="control-btn" onclick="nextTurn()">다음 턴</button>
+                    <button class="control-btn" onclick="autoPlay()">자동 진행</button>
+                </div>
+
+                
+            </div>
+			
+			<div class="play-bangbeob">
+				<h3>하는법</h3>
+				최상단의 파랑, 빨강, 초록의 세 버튼 중 하나를 클릭해 팀을 선택합니다.<br>
+				팀 선택 버튼 밑에 있는 것이 맵입니다.<br>
+				선택한 팀의 색깔의 땅이 지금 가지고 있는 땅이며,<br>노란색으로 은은하게 빛나는 땅을 클릭하면 그 곳을 공격합니다.<br>
+				군사력에 따라서 랜덤으로 공격의 성패가 갈립니다. 60% 이상의 땅을 먹으면 승리!
+			</div>
+			
+            <div class="right-panel">
+                <div class="events-panel">
+                    <h3>📜 최근 사건</h3>
+                    <div id="eventsList"></div>
+                </div>
+            </div>
+			
+        </div>
+    </div>
+
+    <script>
+        // 실제 한나라 지명 144개
+        const territories = [
+            '낙양', '장안', '업성', '완성', '허창', '진류', '개봉', '정주',
+            '양주', '서주', '연주', '기주', '청주', '유주', '병주', '옹주',
+            '양양', '강릉', '무창', '건업', '회계', '오군', '단양', '여남',
+            '여강', '구강', '시상', '장사', '계양', '영릉', '무릉', '영천',
+            '성도', '한중', '파군', '광한', '촉군', '건위', '월수', '영창',
+            '건녕', '운남', '익주', '량주', '무도', '음평', '천수', '서평',
+            '안정', '북지', '상군', '풍익', '부풍', '경조', '좌풍익', '우부풍',
+            '하동', '하내', '상당', '태원', '상곡', '어양', '우북평', '요서',
+            '현토', '낙랑', '대방', '임둔', '진번', '동해', '평원', '제북',
+            '제남', '동평', '임치', '북해', '동래', '성양', '산양', '임회',
+            '동군', '진류', '양국', '패국', '사수', '하비', '광릉', '하비',
+            '단양', '오군', '회계', '여강', '구강', '시상', '장사', '계양',
+            '영릉', '무릉', '영천', '남양', '여남', '강하', '남군', '무릉',
+            '장사', '계양', '영릉', '무릉', '영천', '남양', '여남', '강하',
+            '남군', '무릉', '장사', '계양', '영릉', '무릉', '영천', '남양',
+            '여남', '강하', '남군', '무릉', '장사', '계양', '영릉', '무릉',
+            '영천', '남양', '여남', '강하', '남군', '무릉', '장사', '계양',
+            '영릉', '무릉', '영천', '남양', '여남', '강하', '남군', '무릉'
+        ];
+
+        // 이벤트 목록
+        const gameEvents = [
+            {
+                title: "풍년이 들었습니다",
+                description: "올해 농사가 대풍작을 이루어 백성들이 기뻐하고 있습니다.",
+                effects: { economy: 15, culture: 5 },
+                probability: 0.15
+            },
+            {
+                title: "전염병이 발생했습니다",
+                description: "역병이 돌아 많은 백성들이 고통받고 있습니다.",
+                effects: { military: -10, economy: -15, culture: -5 },
+                probability: 0.1
+            },
+            {
+                title: "명장이 등용되었습니다",
+                description: "뛰어난 무장이 진영에 합류하여 군사력이 크게 향상되었습니다.",
+                effects: { military: 20, culture: 5 },
+                probability: 0.12
+            },
+            {
+                title: "상인들이 번성하고 있습니다",
+                description: "무역이 활발해져 경제가 크게 발전하고 있습니다.",
+                effects: { economy: 18, culture: 8 },
+                probability: 0.13
+            },
+            {
+                title: "학자들이 모여들었습니다",
+                description: "유명한 학자들이 진영에 합류하여 문화가 발달하고 있습니다.",
+                effects: { culture: 20, economy: 5 },
+                probability: 0.11
+            },
+            {
+                title: "자연재해가 발생했습니다",
+                description: "홍수와 가뭄으로 인해 큰 피해를 입었습니다.",
+                effects: { economy: -12, military: -8 },
+                probability: 0.08
+            },
+            {
+                title: "반란이 일어났습니다",
+                description: "일부 지역에서 반란이 발생하여 진압에 나서야 합니다.",
+                effects: { military: -15, culture: -10 },
+                probability: 0.07
+            },
+            {
+                title: "새로운 기술이 개발되었습니다",
+                description: "농업과 군사 기술의 발전으로 국력이 향상되었습니다.",
+                effects: { military: 10, economy: 12, culture: 8 },
+                probability: 0.09
+            },
+            {
+                title: "외교 성공",
+                description: "주변 세력과의 외교가 성공하여 평화로운 시기를 맞았습니다.",
+                effects: { economy: 10, culture: 15 },
+                probability: 0.1
+            },
+            {
+                title: "군사 훈련 강화",
+                description: "체계적인 군사 훈련으로 병사들의 실력이 향상되었습니다.",
+                effects: { military: 12, culture: 3 },
+                probability: 0.12
+            }
+        ];
+
+        let gameState = {
+            selectedFaction: null,
+            turn: 1,
+            territories: {},
+            gameStarted: false,
+            stats: {
+                wei: { military: 70, economy: 80, culture: 75 },
+                shu: { military: 75, economy: 70, culture: 85 },
+                wu: { military: 80, economy: 85, culture: 70 }
+            },
+            recentEvents: []
+        };
+
+        // 게임 초기화
+        function initializeGame() {
+            const map = document.getElementById('gameMap');
+            map.innerHTML = '';
+            
+            // 144개 칸 생성 (12x12)
+            for (let i = 0; i < 144; i++) {
+                const territory = document.createElement('div');
+                territory.className = 'territory neutral';
+                territory.textContent = territories[i];
+                territory.dataset.index = i;
+                territory.onclick = () => captureTerritory(i);
+                map.appendChild(territory);
+                
+                // 초기 진영 배치 (각각 48개씩)
+                if (i < 48) {
+                    gameState.territories[i] = 'wei';
+                    territory.className = 'territory wei';
+                } else if (i < 96) {
+                    gameState.territories[i] = 'shu';
+                    territory.className = 'territory shu';
+                } else {
+                    gameState.territories[i] = 'wu';
+                    territory.className = 'territory wu';
+                }
+            }
+            
+            updateUI();
+            updateStatsDisplay();
+        }
+
+        // 진영 선택
+        function selectFaction(faction) {
+            gameState.selectedFaction = faction;
+            gameState.gameStarted = true;
+            
+            // 버튼 스타일 업데이트
+            document.querySelectorAll('.faction-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            document.querySelector(`.faction-btn.${faction}`).classList.add('selected');
+            
+            updateCapturableAreas();
+            updateStatusMessage(`${getFactionName(faction)} 진영을 선택했습니다! 전략적으로 영토를 확장하세요.`);
+        }
+
+        // 영토 점령 (능력치 기반)
+        function captureTerritory(index) {
+            if (!gameState.selectedFaction || !gameState.gameStarted) {
+                updateStatusMessage('먼저 진영을 선택하세요!');
+                return;
+            }
+
+            const territory = document.querySelector(`[data-index="${index}"]`);
+            if (!territory.classList.contains('capturable')) {
+                updateStatusMessage('인접한 땅만 점령할 수 있습니다!');
+                return;
+            }
+
+            const currentOwner = gameState.territories[index];
+            const playerStats = gameState.stats[gameState.selectedFaction];
+            const enemyStats = gameState.stats[currentOwner];
+            
+            // 전투력 계산 (군사력 + 경제력*0.3 + 문화력*0.2)
+            const playerPower = playerStats.military + playerStats.economy * 0.3 + playerStats.culture * 0.2;
+            const enemyPower = enemyStats.military + enemyStats.economy * 0.3 + enemyStats.culture * 0.2;
+            
+            // 승리 확률 계산
+            const winChance = playerPower / (playerPower + enemyPower);
+            const randomValue = Math.random();
+            
+            if (randomValue < winChance) {
+                // 승리
+                gameState.territories[index] = gameState.selectedFaction;
+                territory.className = `territory ${gameState.selectedFaction}`;
+                updateStatusMessage(`${territories[index]}을(를) 성공적으로 점령했습니다!`);
+                
+                // 승리 보상
+                gameState.stats[gameState.selectedFaction].military += 2;
+                gameState.stats[gameState.selectedFaction].economy += 1;
+            } else {
+                // 패배
+                updateStatusMessage(`${territories[index]} 점령에 실패했습니다. 적의 저항이 강합니다.`);
+                
+                // 패배 페널티
+                gameState.stats[gameState.selectedFaction].military -= 3;
+            }
+            
+            updateUI();
+            updateStatsDisplay();
+            
+            // 다음 턴으로
+            setTimeout(() => {
+                nextTurn();
+            }, 1500);
+        }
+
+        // 다음 턴
+        function nextTurn() {
+            if (!gameState.gameStarted) return;
+            
+            gameState.turn++;
+            
+            // 이벤트 발생 (30% 확률)
+            if (Math.random() < 0.3) {
+                triggerRandomEvent();
+            }
+            
+            // AI 턴
+            aiTurn();
+            
+            // 능력치 자연 회복/감소
+            Object.keys(gameState.stats).forEach(faction => {
+                const stats = gameState.stats[faction];
+                const territoryCount = Object.values(gameState.territories).filter(t => t === faction).length;
+                
+                // 영토 수에 따른 보너스/페널티
+                const territoryBonus = Math.floor(territoryCount / 20);
+                stats.economy += territoryBonus;
+                stats.culture += Math.floor(territoryBonus / 2);
+                
+                // 능력치 상한/하한 적용
+                stats.military = Math.max(10, Math.min(100, stats.military));
+                stats.economy = Math.max(10, Math.min(100, stats.economy));
+                stats.culture = Math.max(10, Math.min(100, stats.culture));
+            });
+            
+            updateCapturableAreas();
+            updateStatsDisplay();
+            checkGameEnd();
+        }
+
+        // 랜덤 이벤트 발생
+        function triggerRandomEvent() {
+            const availableEvents = gameEvents.filter(event => Math.random() < event.probability);
+            if (availableEvents.length === 0) return;
+            
+            const event = availableEvents[Math.floor(Math.random() * availableEvents.length)];
+            const affectedFaction = ['wei', 'shu', 'wu'][Math.floor(Math.random() * 3)];
+            
+            // 이벤트 효과 적용
+            Object.keys(event.effects).forEach(stat => {
+                gameState.stats[affectedFaction][stat] += event.effects[stat];
+                gameState.stats[affectedFaction][stat] = Math.max(10, Math.min(100, gameState.stats[affectedFaction][stat]));
+            });
+            
+            // 이벤트 기록
+            const eventRecord = {
+                ...event,
+                faction: affectedFaction,
+                turn: gameState.turn
+            };
+            
+            gameState.recentEvents.unshift(eventRecord);
+            if (gameState.recentEvents.length > 5) {
+                gameState.recentEvents.pop();
+            }
+            
+            updateEventsDisplay();
+            updateStatusMessage(`${getFactionName(affectedFaction)}에 "${event.title}" 이벤트가 발생했습니다!`);
+        }
+
+        // AI 턴
+        function aiTurn() {
+            const factions = ['wei', 'shu', 'wu'].filter(f => f !== gameState.selectedFaction);
+            
+            factions.forEach((faction, index) => {
+                setTimeout(() => {
+                    const capturableAreas = getCapturableAreasForFaction(faction);
+                    if (capturableAreas.length > 0) {
+                        // AI는 가장 약한 적을 우선 공격
+                        const bestTarget = capturableAreas.reduce((best, current) => {
+                            const currentOwner = gameState.territories[current];
+                            const bestOwner = gameState.territories[best];
+                            
+                            if (!currentOwner) return current;
+                            if (!bestOwner) return best;
+                            
+                            const currentPower = getTotalPower(currentOwner);
+                            const bestPower = getTotalPower(bestOwner);
+                            
+                            return currentPower < bestPower ? current : best;
+                        });
+                        
+                        // AI 전투 계산
+                        const aiStats = gameState.stats[faction];
+                        const targetOwner = gameState.territories[bestTarget];
+                        const enemyStats = gameState.stats[targetOwner];
+                        
+                        const aiPower = getTotalPower(faction);
+                        const enemyPower = getTotalPower(targetOwner);
+                        
+                        const winChance = aiPower / (aiPower + enemyPower);
+                        
+                        if (Math.random() < winChance) {
+                            gameState.territories[bestTarget] = faction;
+                            const territory = document.querySelector(`[data-index="${bestTarget}"]`);
+                            territory.className = `territory ${faction}`;
+                            
+                            // AI 승리 보상
+                            gameState.stats[faction].military += 1;
+                        } else {
+                            // AI 패배 페널티
+                            gameState.stats[faction].military -= 2;
+                        }
+                    }
+                    
+                    if (index === factions.length - 1) {
+                        updateUI();
+                        updateStatsDisplay();
+                    }
+                }, (index + 1) * 500);
+            });
+        }
+
+        // 총 전투력 계산
+        function getTotalPower(faction) {
+            const stats = gameState.stats[faction];
+            return stats.military + stats.economy * 0.3 + stats.culture * 0.2;
+        }
+
+        // 점령 가능한 지역 표시
+        function updateCapturableAreas() {
+            if (!gameState.selectedFaction) return;
+            
+            // 모든 capturable 클래스 제거
+            document.querySelectorAll('.territory').forEach(t => {
+                t.classList.remove('capturable');
+            });
+            
+            // 선택된 진영이 점령 가능한 지역 표시
+            const capturableAreas = getCapturableAreasForFaction(gameState.selectedFaction);
+            capturableAreas.forEach(index => {
+                const territory = document.querySelector(`[data-index="${index}"]`);
+                territory.classList.add('capturable');
+            });
+        }
+
+        // 특정 진영이 점령 가능한 지역 찾기
+        function getCapturableAreasForFaction(faction) {
+            const capturableAreas = [];
+            
+            for (let i = 0; i < 144; i++) {
+                if (gameState.territories[i] === faction) continue;
+                
+                // 인접한 칸 확인
+                const adjacentIndices = getAdjacentIndices(i);
+                const hasAdjacentTerritory = adjacentIndices.some(adjIndex => 
+                    gameState.territories[adjIndex] === faction
+                );
+                
+                if (hasAdjacentTerritory) {
+                    capturableAreas.push(i);
+                }
+            }
+            
+            return capturableAreas;
+        }
+
+        // 인접한 칸의 인덱스 구하기
+        function getAdjacentIndices(index) {
+            const row = Math.floor(index / 12);
+            const col = index % 12;
+            const adjacent = [];
+            
+            // 상하좌우 확인
+            if (row > 0) adjacent.push(index - 12); // 위
+            if (row < 11) adjacent.push(index + 12); // 아래
+            if (col > 0) adjacent.push(index - 1); // 왼쪽
+            if (col < 11) adjacent.push(index + 1); // 오른쪽
+            
+            return adjacent;
+        }
+
+        // 능력치 표시 업데이트
+        function updateStatsDisplay() {
+            const statsContainer = document.getElementById('factionStats');
+            statsContainer.innerHTML = '';
+            
+            Object.keys(gameState.stats).forEach(faction => {
+                const stats = gameState.stats[faction];
+                const factionDiv = document.createElement('div');
+                factionDiv.style.marginBottom = '20px';
+                factionDiv.style.padding = '15px';
+                factionDiv.style.background = 'rgba(255,255,255,0.05)';
+                factionDiv.style.borderRadius = '8px';
+                factionDiv.style.border = gameState.selectedFaction === faction ? '2px solid #ffd700' : '1px solid rgba(255,255,255,0.2)';
+                
+                factionDiv.innerHTML = `
+                    <h4 style="color: #ffd700; margin-bottom: 10px; text-align: center;">${getFactionName(faction)}</h4>
+                    <div class="stat-item">
+                        <div class="stat-name">⚔️ 군사력</div>
+                        <div class="stat-value">${stats.military}</div>
+                        <div class="stat-bar">
+                            <div class="stat-fill military" style="width: ${stats.military}%"></div>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-name">💰 경제력</div>
+                        <div class="stat-value">${stats.economy}</div>
+                        <div class="stat-bar">
+                            <div class="stat-fill economy" style="width: ${stats.economy}%"></div>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-name">📚 문화력</div>
+                        <div class="stat-value">${stats.culture}</div>
+                        <div class="stat-bar">
+                            <div class="stat-fill culture" style="width: ${stats.culture}%"></div>
+                        </div>
+                    </div>
+                `;
+                
+                statsContainer.appendChild(factionDiv);
+            });
+        }
+
+        // 이벤트 표시 업데이트
+        function updateEventsDisplay() {
+            const eventsContainer = document.getElementById('eventsList');
+            eventsContainer.innerHTML = '';
+            
+            if (gameState.recentEvents.length === 0) {
+                eventsContainer.innerHTML = '<p style="text-align: center; color: #888;">아직 발생한 사건이 없습니다.</p>';
+                return;
+            }
+            
+            gameState.recentEvents.forEach(event => {
+                const eventDiv = document.createElement('div');
+                eventDiv.className = 'event-item';
+                
+                const effectsHtml = Object.keys(event.effects).map(stat => {
+                    const value = event.effects[stat];
+                    const isPositive = value > 0;
+                    const statName = stat === 'military' ? '⚔️' : stat === 'economy' ? '💰' : '📚';
+                    return `<span class="effect ${isPositive ? 'positive' : 'negative'}">${statName}${isPositive ? '+' : ''}${value}</span>`;
+                }).join('');
+                
+                eventDiv.innerHTML = `
+                    <div class="event-title">${event.title}</div>
+                    <div class="event-description">${event.description}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="event-effects">${effectsHtml}</div>
+                        <small style="color: #888;">${getFactionName(event.faction)} - ${event.turn}턴</small>
+                    </div>
+                `;
+                
+                eventsContainer.appendChild(eventDiv);
+            });
+        }
+
+        // UI 업데이트
+        function updateUI() {
+            const counts = { wei: 0, shu: 0, wu: 0 };
+            
+            Object.values(gameState.territories).forEach(faction => {
+                counts[faction]++;
+            });
+            
+            document.getElementById('wei-count').textContent = counts.wei;
+            document.getElementById('shu-count').textContent = counts.shu;
+            document.getElementById('wu-count').textContent = counts.wu;
+        }
+
+        // 게임 종료 확인
+        function checkGameEnd() {
+            const counts = { wei: 0, shu: 0, wu: 0 };
+            Object.values(gameState.territories).forEach(faction => {
+                counts[faction]++;
+            });
+            
+            const totalTerritories = Object.keys(gameState.territories).length;
+            const winThreshold = Math.floor(totalTerritories * 0.6); // 60% 이상 점령시 승리
+            
+            for (const [faction, count] of Object.entries(counts)) {
+                if (count >= winThreshold) {
+                    updateStatusMessage(`🎉 ${getFactionName(faction)} 진영이 천하를 통일했습니다! 🎉`);
+                    gameState.gameStarted = false;
+                    return;
+                }
+            }
+            
+            // 50턴 이후에는 능력치 합계로 승부 결정
+            if (gameState.turn >= 50) {
+                const powerRanking = Object.keys(gameState.stats).map(faction => ({
+                    faction,
+                    power: getTotalPower(faction),
+                    territories: counts[faction]
+                })).sort((a, b) => (b.power + b.territories * 2) - (a.power + a.territories * 2));
+                
+                const winner = powerRanking[0];
+                updateStatusMessage(`🎉 ${getFactionName(winner.faction)} 진영이 최강의 세력으로 승리했습니다! 🎉`);
+                gameState.gameStarted = false;
+            }
+        }
+
+        // 진영 이름 반환
+        function getFactionName(faction) {
+            const names = { wei: '위(魏)', shu: '촉(蜀)', wu: '오(吳)' };
+            return names[faction];
+        }
+
+        // 상태 메시지 업데이트
+        function updateStatusMessage(message) {
+            document.getElementById('statusMessage').textContent = message;
+        }
+
+        // 게임 리셋
+        function resetGame() {
+            gameState = {
+                selectedFaction: null,
+                turn: 1,
+                territories: {},
+                gameStarted: false,
+                stats: {
+                    wei: { military: 70, economy: 80, culture: 75 },
+                    shu: { military: 75, economy: 70, culture: 85 },
+                    wu: { military: 80, economy: 85, culture: 70 }
+                },
+                recentEvents: []
+            };
+            
+            document.querySelectorAll('.faction-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            
+            initializeGame();
+            updateEventsDisplay();
+            updateStatusMessage('진영을 선택하고 전략적으로 천하통일을 이루어보세요!');
+        }
+
+        // 자동 진행
+        function autoPlay() {
+            if (!gameState.gameStarted) {
+                updateStatusMessage('먼저 진영을 선택하세요!');
+                return;
+            }
+            
+            const interval = setInterval(() => {
+                if (!gameState.gameStarted) {
+                    clearInterval(interval);
+                    return;
+                }
+                
+                nextTurn();
+            }, 2000);
+        }
+
+        // 게임 시작
+        initializeGame();
+        updateEventsDisplay();
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'983fc9e0a4e70d05',t:'MTc1ODY5MDc2NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
